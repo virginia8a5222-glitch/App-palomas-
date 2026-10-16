@@ -20,6 +20,8 @@ jobs:
 
       - name: Preparar Android
         uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools platforms;android-35 build-tools;35.0.0'
 
       - name: Instalar Gradle
         uses: gradle/actions/setup-gradle@v4
@@ -29,18 +31,21 @@ jobs:
       - name: Extraer proyecto
         run: |
           mkdir -p proyecto
-          unzip -o '*.zip' -d proyecto
+          ZIP="$(find . -maxdepth 1 -type f -name '*.zip' | head -n 1)"
+          test -n "$ZIP"
+          unzip -o "$ZIP" -d proyecto
           find proyecto -name settings.gradle -print
 
       - name: Compilar APK
         run: |
-          ROOT="$(find proyecto -name settings.gradle -printf '%h\n' | head -n 1)"
+          ROOT="$(find proyecto -name settings.gradle -type f -printf '%h\n' | head -n 1)"
           test -n "$ROOT"
           cd "$ROOT"
-          gradle assembleDebug
+          gradle assembleDebug --stacktrace
 
       - name: Guardar APK
         uses: actions/upload-artifact@v4
         with:
           name: Mi-Palomar-APK
           path: proyecto/**/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
