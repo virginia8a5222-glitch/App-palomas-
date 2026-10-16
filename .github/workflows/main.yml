@@ -1,0 +1,46 @@
+
+name: Crear APK de Mi Palomar
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+
+      - name: Preparar Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Preparar Android
+        uses: android-actions/setup-android@v3
+
+      - name: Instalar Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.7'
+
+      - name: Extraer proyecto
+        run: |
+          mkdir -p proyecto
+          unzip -o '*.zip' -d proyecto
+          find proyecto -name settings.gradle -print
+
+      - name: Compilar APK
+        run: |
+          ROOT="$(find proyecto -name settings.gradle -printf '%h\n' | head -n 1)"
+          test -n "$ROOT"
+          cd "$ROOT"
+          gradle assembleDebug
+
+      - name: Guardar APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Mi-Palomar-APK
+          path: proyecto/**/build/outputs/apk/debug/*.apk
